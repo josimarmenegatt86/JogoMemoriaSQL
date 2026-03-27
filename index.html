@@ -3,79 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jogo da Memória - SQL</title>
+  <title>SQL Memory Game | SENAI</title>
   <style>
+    :root {
+      --primary: #0077cc;
+      --success: #2ecc71;
+      --error: #e74c3c;
+      --bg: #0b0e14;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at top right, #1a2a6c, #b21f1f, #fdbb2d); /* Fundo tipo aurora/galáxia */
+      background-attachment: fixed;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
-      background-color: #f4f4f9;
+      color: #fff;
     }
 
     h1 {
-      color: #333;
+      font-size: 2.5rem;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
     }
 
     .score-board {
       display: flex;
-      justify-content: space-between;
-      width: 520px;
-      font-size: 1.2rem;
-      color: #333;
-      margin-bottom: 20px;
+      gap: 20px;
+      background: var(--glass);
+      padding: 15px 30px;
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
 
     .game-container {
       display: grid;
-      grid-template-columns: repeat(4, 120px);
-      gap: 10px;
-      width: 520px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      perspective: 1000px; /* Necessário para efeito 3D */
+      max-width: 600px;
+      width: 95%;
     }
 
     .card {
-      width: 120px;
-      height: 120px;
-      background-color: #3498db;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      text-align: center;
+      width: 100%;
+      aspect-ratio: 1 / 1;
       cursor: pointer;
-      border-radius: 5px;
-      transition: background-color 0.3s, transform 0.3s;
-      font-weight: bold;
-      user-select: none;
-      padding: 10px;
-      box-sizing: border-box;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .card.flipped {
-      background-color: #ecf0f1;
-      color: #3498db;
-      cursor: default;
-      pointer-events: none;
+      transform: rotateY(180deg);
     }
 
-    .card.matched {
-      background-color: #2ecc71; /* Cor verde para cartas corretas */
-      color: #fff;
-      pointer-events: none; /* Desativa os cliques para cartas corretas */
+    /* Lados da Carta */
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      font-weight: 600;
+      box-sizing: border-box;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Verso (Escondido) */
+    .card-front {
+      background: linear-gradient(135deg, #0077cc, #004477);
+      color: white;
+      font-size: 2rem;
+    }
+
+    /* Frente (Revelada) */
+    .card-back {
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      transform: rotateY(180deg);
+      font-size: 0.9rem;
+      border: 3px solid var(--primary);
+    }
+
+    .card.matched .card-back {
+      background-color: var(--success);
+      color: white;
+      border-color: #1b9e53;
+    }
+
+    .card.error .card-back {
+      background-color: var(--error);
+      color: white;
+      border-color: #c0392b;
+    }
+
+    @media (max-width: 480px) {
+      .game-container { grid-template-columns: repeat(3, 1fr); }
+      .card-back { font-size: 0.75rem; }
     }
   </style>
 </head>
 <body>
 
-  <h1>Jogo da Memória - SQL</h1>
+  <h1>SQL Memory Quest</h1>
+  
   <div class="score-board">
-    <div id="scoreBoard">Pontuação: 0</div>
+    <div id="scoreBoard">Pontos: 0</div>
     <div id="timeBoard">Tempo: 0s</div>
   </div>
+
   <div class="game-container" id="gameBoard"></div>
 
   <script>
@@ -83,10 +133,10 @@
       { term: "SELECT", concept: "Extrai dados de um banco de dados", pairId: 1 },
       { term: "INSERT", concept: "Insere novos dados em uma tabela", pairId: 2 },
       { term: "DELETE", concept: "Remove dados de uma tabela", pairId: 3 },
-      { term: "UPDATE", concept: "Modifica dados existentes em uma tabela", pairId: 4 },
-      { term: "CREATE", concept: "Cria uma nova tabela ou banco de dados", pairId: 5 },
-      { term: "DROP", concept: "Exclui uma tabela ou banco de dados", pairId: 6 },
-      { term: "ALTER", concept: "Modifica a estrutura de uma tabela", pairId: 7 },
+      { term: "UPDATE", concept: "Modifica dados existentes", pairId: 4 },
+      { term: "CREATE", concept: "Cria nova tabela ou banco", pairId: 5 },
+      { term: "DROP", concept: "Exclui uma tabela ou banco", pairId: 6 },
+      { term: "ALTER", concept: "Modifica estrutura da tabela", pairId: 7 },
       { term: "JOIN", concept: "Combina registros de várias tabelas", pairId: 8 }
     ];
 
@@ -95,105 +145,87 @@
     let score = 0;
     let timer;
     let timeElapsed = 0;
+    let isLocked = false;
 
     function startTimer() {
+      if(timer) return;
       timer = setInterval(() => {
         timeElapsed++;
         document.getElementById('timeBoard').innerText = `Tempo: ${timeElapsed}s`;
       }, 1000);
     }
 
-    function stopTimer() {
-      clearInterval(timer);
-    }
-
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-    }
-
-    function updateScore(points) {
-      score += points;
-      document.getElementById('scoreBoard').innerText = `Pontuação: ${score}`;
-    }
-
     function createBoard() {
       const gameBoard = document.getElementById('gameBoard');
       const deck = [];
-
-      // Prepara o deck com pares de termos e conceitos associados ao mesmo pairId
-      cardsData.forEach((item) => {
-        deck.push({ content: item.term, type: "term", pairId: item.pairId });
-        deck.push({ content: item.concept, type: "concept", pairId: item.pairId });
+      cardsData.forEach(item => {
+        deck.push({ content: item.term, pairId: item.pairId });
+        deck.push({ content: item.concept, pairId: item.pairId });
       });
 
-      shuffle(deck);
-      deck.forEach((cardData) => {
+      deck.sort(() => Math.random() - 0.5);
+
+      deck.forEach(data => {
         const card = document.createElement('div');
         card.classList.add('card');
-        card.dataset.pairId = cardData.pairId; // Atribui o parId para comparação
-        card.dataset.type = cardData.type;
-        card.dataset.content = cardData.content;
-        card.setAttribute('aria-label', `Carta: ${cardData.content}`);
-        card.setAttribute('role', 'button');
+        card.dataset.pairId = data.pairId;
+        
+        card.innerHTML = `
+          <div class="card-front">?</div>
+          <div class="card-back">${data.content}</div>
+        `;
+
         card.addEventListener('click', flipCard);
         gameBoard.appendChild(card);
       });
     }
 
     function flipCard() {
-      if (timeElapsed === 0) startTimer();
+      if (isLocked || this.classList.contains('flipped') || this.classList.contains('matched')) return;
 
-      if (flippedCards.length < 2 && !this.classList.contains('flipped') && !this.classList.contains('matched')) {
-        this.classList.add('flipped');
-        this.innerText = this.dataset.content;
-        flippedCards.push(this);
+      startTimer();
+      this.classList.add('flipped');
+      flippedCards.push(this);
 
-        if (flippedCards.length === 2) {
-          checkMatch();
-        }
+      if (flippedCards.length === 2) {
+        checkMatch();
       }
     }
 
     function checkMatch() {
+      isLocked = true;
       const [card1, card2] = flippedCards;
-      const isMatch = card1.dataset.pairId === card2.dataset.pairId; // Compara pelo pairId
+      const isMatch = card1.dataset.pairId === card2.dataset.pairId;
 
       if (isMatch) {
-        handleMatch(card1, card2);
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+        score += 10;
+        matchedCards += 2;
+        resetTurn();
+        if (matchedCards === cardsData.length * 2) {
+          clearInterval(timer);
+          setTimeout(() => alert(`Missão Cumprida! ${score} pontos em ${timeElapsed}s`), 500);
+        }
       } else {
-        handleMismatch(card1, card2);
+        card1.classList.add('error');
+        card2.classList.add('error');
+        score = Math.max(0, score - 2);
+        setTimeout(() => {
+          card1.classList.remove('flipped', 'error');
+          card2.classList.remove('flipped', 'error');
+          resetTurn();
+        }, 1000);
       }
+      document.getElementById('scoreBoard').innerText = `Pontos: ${score}`;
     }
 
-    function handleMatch(card1, card2) {
-      card1.classList.add('matched');
-      card2.classList.add('matched');
+    function resetTurn() {
       flippedCards = [];
-      matchedCards += 2;
-      updateScore(10);
-
-      if (matchedCards === cardsData.length * 2) {
-        stopTimer();
-        setTimeout(() => alert(`Parabéns! Você completou o jogo com ${score} pontos em ${timeElapsed} segundos!`), 500);
-      }
-    }
-
-    function handleMismatch(card1, card2) {
-      setTimeout(() => {
-        card1.classList.remove('flipped');
-        card2.classList.remove('flipped');
-        card1.innerText = '';
-        card2.innerText = '';
-        flippedCards = [];
-      }, 500);
-      updateScore(-2);
+      isLocked = false;
     }
 
     createBoard();
   </script>
-
 </body>
 </html>
